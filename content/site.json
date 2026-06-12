@@ -1,0 +1,122 @@
+{
+  "$schema": "./site.schema.json",
+  "version": 2,
+  "profile": {
+    "githubUser": "ivan-podgurskiy",
+    "hexUser": "ivan-podgurskiy",
+    "email": "",
+    "linkedin": "https://www.linkedin.com/in/ivanpodgurskiy/",
+    "terminal": {
+      "role": "Senior Full-Stack Engineer",
+      "stack": ["Elixir", "JavaScript", "Python"],
+      "location": "Antalya, TR (UTC+3)",
+      "status": ":available"
+    }
+  },
+  "packages": [
+    {
+      "name": "safe_atom",
+      "desc": "Whitelist-based casting of values to atoms without growing the VM atom table from untrusted input.",
+      "pinned": true,
+      "order": 1
+    },
+    {
+      "name": "humanizer",
+      "desc": "Human-friendly formatting for Elixir: bytes, durations, relative time, large numbers, ordinals and list joins.",
+      "pinned": true,
+      "order": 2
+    },
+    {
+      "name": "jitter",
+      "desc": "Backoff jitter strategies (No, Full, Equal, Decorrelated) as composable Stream transformers.",
+      "pinned": true,
+      "order": 3
+    },
+    {
+      "name": "frozen_clock",
+      "desc": "Async-safe, process-local freezing of DateTime.utc_now/0 for tests — no behaviours, no mocks.",
+      "pinned": false,
+      "order": 4
+    }
+  ],
+  "repos": [
+    {
+      "id": "jitter",
+      "source": "github",
+      "repo": "ivan-podgurskiy/jitter",
+      "pinned": true,
+      "order": 1
+    },
+    {
+      "id": "safe_atom",
+      "source": "github",
+      "repo": "ivan-podgurskiy/safe_atom",
+      "pinned": true,
+      "order": 2
+    },
+    {
+      "id": "humanizer",
+      "source": "github",
+      "repo": "ivan-podgurskiy/humanizer",
+      "pinned": true,
+      "order": 3
+    },
+    {
+      "id": "elixir-design-patterns",
+      "source": "github",
+      "repo": "ivan-podgurskiy/elixir-design-patterns",
+      "pinned": true,
+      "order": 4
+    },
+    {
+      "id": "github-actions-templates",
+      "source": "github",
+      "repo": "ivan-podgurskiy/github-actions-templates",
+      "pinned": true,
+      "order": 5
+    },
+    {
+      "id": "docker-compose-recipes",
+      "source": "github",
+      "repo": "ivan-podgurskiy/docker-compose-recipes",
+      "pinned": true,
+      "order": 6
+    },
+    {
+      "id": "sysvis",
+      "source": "github",
+      "repo": "ivan-podgurskiy/sysvis",
+      "pinned": false,
+      "order": 7
+    },
+    {
+      "id": "huntr",
+      "source": "github",
+      "repo": "ivan-podgurskiy/huntr",
+      "pinned": false,
+      "order": 8
+    },
+    {
+      "id": "royal-shortener",
+      "source": "github",
+      "repo": "ivan-podgurskiy/royal-shortener",
+      "pinned": false,
+      "order": 9
+    },
+    {
+      "id": "frozen_clock",
+      "source": "github",
+      "repo": "ivan-podgurskiy/frozen_clock",
+      "pinned": false,
+      "order": 10
+    },
+    {
+      "id": "langchain-document-pipeline",
+      "source": "github",
+      "repo": "ivan-podgurskiy/langchain-document-pipeline",
+      "pinned": false,
+      "order": 11
+    }
+  ],
+  "writing": []
+}

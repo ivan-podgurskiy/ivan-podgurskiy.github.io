@@ -1,0 +1,23 @@
+name: Validate site content
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "content/site.json"
+      - "content/site.schema.json"
+  pull_request:
+    paths:
+      - "content/site.json"
+      - "content/site.schema.json"
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate site.json against schema
+        run: npx --yes ajv-cli@5 validate -s content/site.schema.json -d content/site.json --spec=draft7

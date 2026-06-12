@@ -1,0 +1,152 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ivanpodgurskiy.name/content/site.schema.json",
+  "title": "Observer portfolio site content",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "profile", "packages", "repos", "writing"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Increment when making breaking content changes."
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["githubUser", "hexUser", "linkedin"],
+      "properties": {
+        "githubUser": { "type": "string", "minLength": 1 },
+        "hexUser": { "type": "string", "minLength": 1 },
+        "email": {
+          "type": "string",
+          "default": "",
+          "pattern": "^$|^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+        },
+        "linkedin": { "type": "string", "minLength": 8, "pattern": "^https?://" },
+        "terminal": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "role": { "type": "string" },
+            "stack": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            },
+            "location": { "type": "string" },
+            "status": { "type": "string" }
+          }
+        }
+      }
+    },
+    "packages": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/package" }
+    },
+    "repos": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/repo" }
+    },
+    "writing": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/writing" }
+    }
+  },
+  "definitions": {
+    "pinFields": {
+      "type": "object",
+      "properties": {
+        "pinned": { "type": "boolean", "default": false },
+        "order": { "type": "integer", "minimum": 0 },
+        "visible": { "type": "boolean", "default": true }
+      }
+    },
+    "package": {
+      "allOf": [
+        { "$ref": "#/definitions/pinFields" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "desc"],
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "desc": { "type": "string", "minLength": 1 },
+            "pinned": { "type": "boolean" },
+            "order": { "type": "integer", "minimum": 0 },
+            "visible": { "type": "boolean" }
+          }
+        }
+      ]
+    },
+    "writing": {
+      "allOf": [
+        { "$ref": "#/definitions/pinFields" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["title", "sub", "url"],
+          "properties": {
+            "title": { "type": "string", "minLength": 1 },
+            "sub": { "type": "string", "minLength": 1 },
+            "url": { "type": "string", "minLength": 8, "pattern": "^https?://" },
+            "pinned": { "type": "boolean" },
+            "order": { "type": "integer", "minimum": 0 },
+            "visible": { "type": "boolean" }
+          }
+        }
+      ]
+    },
+    "repo": {
+      "allOf": [
+        { "$ref": "#/definitions/pinFields" },
+        {
+          "type": "object",
+          "required": ["id", "source"],
+          "properties": {
+            "id": { "type": "string", "minLength": 1 },
+            "source": { "type": "string", "enum": ["github", "manual"] },
+            "pinned": { "type": "boolean" },
+            "order": { "type": "integer", "minimum": 0 },
+            "visible": { "type": "boolean" },
+            "repo": {
+              "type": "string",
+              "pattern": "^[^/\\s]+/[^/\\s]+$",
+              "description": "GitHub repo slug, e.g. ivanpodgurskiy/safe_atom"
+            },
+            "override": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "description": { "type": "string" },
+                "name": { "type": "string" }
+              }
+            },
+            "name": { "type": "string" },
+            "url": { "type": "string", "minLength": 8, "pattern": "^https?://" },
+            "description": { "type": "string" },
+            "language": { "type": "string" },
+            "stars": { "type": "integer", "minimum": 0 },
+            "pushed_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}" }
+          },
+          "allOf": [
+            {
+              "if": { "properties": { "source": { "const": "github" } } },
+              "then": { "required": ["repo"] }
+            },
+            {
+              "if": { "properties": { "source": { "const": "manual" } } },
+              "then": {
+                "required": ["name", "url", "description"],
+                "properties": {
+                  "repo": false
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
