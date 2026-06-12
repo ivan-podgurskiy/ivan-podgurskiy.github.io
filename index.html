@@ -169,13 +169,80 @@ a:focus-visible, button:focus-visible {
   transform: translateX(-29px);
 }
 .terminal-body {
-  padding: 24px 22px 28px;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 22px 20px;
   font-family: var(--mono);
   font-size: 15px;
   line-height: 1.75;
   min-height: 215px;
+  max-height: 340px;
   white-space: pre-wrap;
   word-break: break-word;
+}
+.terminal-log {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 100px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-dim) transparent;
+}
+.terminal-log::-webkit-scrollbar { width: 6px; }
+.terminal-log::-webkit-scrollbar-thumb {
+  background: var(--accent-dim);
+  border-radius: 3px;
+}
+.terminal-entry { margin-bottom: 0.35em; }
+.terminal-entry:last-child { margin-bottom: 0; }
+.terminal-input-line {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.terminal-input-line input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: inherit;
+  line-height: inherit;
+  outline: none;
+  padding: 0;
+  min-width: 0;
+  caret-color: var(--accent);
+}
+.terminal-input-line input::selection { background: var(--accent-dim); }
+.terminal.focused {
+  border-color: var(--glass-border-hover);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(167, 139, 250, 0.12);
+}
+.terminal-hint {
+  margin: 10px 0 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+.terminal-hint kbd {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 2px 6px;
+  border: 1px solid var(--glass-border);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.04);
+}
+.section-flash > .section-head {
+  animation: sectionFlash 1.4s ease;
+}
+@keyframes sectionFlash {
+  0%, 100% { opacity: 1; }
+  25% { opacity: 1; text-shadow: 0 0 20px var(--accent-glow); }
+  50% { opacity: 0.85; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .section-flash > .section-head { animation: none; }
 }
 .t-prompt { color: var(--accent); }
 .t-dim { color: var(--ink-faint); }
@@ -475,13 +542,20 @@ footer .atom { color: var(--accent); }
 
 <main id="app">
   <section class="hero wrap" aria-label="Introduction" data-screen-label="Hero">
-    <div class="glass terminal reveal in">
+    <div class="glass terminal hoverable reveal in" id="terminal-wrap" tabindex="0" aria-label="Interactive IEx terminal">
       <div class="terminal-bar" aria-hidden="true">
         <span class="dot"></span><span class="dot"></span><span class="dot"></span>
         <span class="title">iex — observer@beam</span>
       </div>
-      <div class="terminal-body" id="terminal" aria-live="polite"></div>
+      <div class="terminal-body" id="terminal">
+        <div class="terminal-log" id="terminal-log" role="log" aria-live="polite"></div>
+        <div class="terminal-input-line" id="terminal-input-line" hidden>
+          <span class="t-prompt">iex&gt;</span>
+          <input type="text" id="terminal-input" aria-label="IEx command" autocomplete="off" spellcheck="false" autocapitalize="off">
+        </div>
+      </div>
     </div>
+    <p class="terminal-hint" id="terminal-hint" hidden><span class="t-dim">//</span> type <kbd>h()</kbd> for help · <kbd>tab</kbd> complete · <kbd>↑</kbd><kbd>↓</kbd> history</p>
     <nav class="hero-links" aria-label="Contact links">
       <a class="glass pill" data-link="github" href="#" target="_blank" rel="noopener" aria-label="GitHub profile"><span class="pfx">&gt;</span> GitHub</a>
       <a class="glass pill" data-link="hex" href="#" target="_blank" rel="noopener" aria-label="hex.pm profile"><span class="pfx">&gt;</span> hex.pm</a>
@@ -545,11 +619,40 @@ const LANG_COLORS = {
 
 const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-const TWEAK_FALLBACK = { cursorEffect: "attract", cursorRadius: 130, cursorStrength: 27, sparks: true, accent: "#a78bfa", density: 50 };
+const TWEAK_FALLBACK = { cursorEffect: "attract", cursorRadius: 130, cursorStrength: 27, sparks: true, accent: "#a78bfa", density: 50, paused: false };
+const ACCENT_CYCLE = ["#a78bfa", "#22d3ee", "#4ade80", "#f472b6", "#fde047", "#fb923c"];
 window.OBSERVER_TWEAKS = Object.assign({}, TWEAK_FALLBACK, window.OBSERVER_TWEAKS || {});
 const TW = () => window.OBSERVER_TWEAKS;
 
 const paletteItems = [];
+const terminalCtx = {
+  profile: {},
+  terminalProfile: {},
+  packages: [],
+  repos: [],
+  siteVersion: 1,
+  bootTime: Date.now(),
+  packageMeta: new Map(),
+};
+
+function emitTweaks(patch) {
+  Object.assign(window.OBSERVER_TWEAKS, patch);
+  window.dispatchEvent(new CustomEvent("observer:tweaks", { detail: { ...TW() } }));
+}
+
+function setObserverPaused(paused) {
+  emitTweaks({ paused });
+  const canvas = document.getElementById("bg-canvas");
+  const staticBg = document.querySelector(".bg-static");
+  if (!canvas || !staticBg) return;
+  if (paused) {
+    canvas.style.display = "none";
+    staticBg.style.display = "block";
+  } else {
+    canvas.style.display = REDUCED ? "none" : "";
+    staticBg.style.display = REDUCED ? "block" : "none";
+  }
+}
 
 function esc(text) {
   return String(text)
@@ -675,6 +778,7 @@ function observeReveals() {
   let last = 0;
   function frame(now) {
     requestAnimationFrame(frame);
+    if (TW().paused) return;
     if (now - last < 1000 / 30) return;
     last = now;
 
@@ -774,44 +878,455 @@ function observeReveals() {
   requestAnimationFrame(frame);
 })();
 
-function startTerminal(terminalProfile) {
-  const el = document.getElementById("terminal");
-  const profile = terminalProfile || {
-    role: "Senior Full-Stack Engineer",
-    stack: ["Elixir", "JavaScript", "Python"],
-    location: "Antalya, TR (UTC+3)",
-    status: ":available",
-  };
-  const stackStr = profile.stack.map((s) => `"${s}"`).join(", ");
-  const CMD = "Ivan.who_am_i()";
-  const RESULT =
+function formatProfileMap(profile) {
+  const stack = profile.stack || [];
+  return (
     `<span class="t-dim">%{</span>\n` +
     `  <span class="t-key">role:</span> <span class="t-str">"${esc(profile.role)}"</span><span class="t-dim">,</span>\n` +
-    `  <span class="t-key">stack:</span> <span class="t-dim">[</span>${profile.stack.map((s) => `<span class="t-str">"${esc(s)}"</span>`).join("<span class=\"t-dim\">,</span> ")}<span class="t-dim">]</span><span class="t-dim">,</span>\n` +
+    `  <span class="t-key">stack:</span> <span class="t-dim">[</span>${stack.map((s) => `<span class="t-str">"${esc(s)}"</span>`).join("<span class=\"t-dim\">,</span> ")}<span class="t-dim">]</span><span class="t-dim">,</span>\n` +
     `  <span class="t-key">location:</span> <span class="t-str">"${esc(profile.location)}"</span><span class="t-dim">,</span>\n` +
     `  <span class="t-key">status:</span> <span class="t-atom">${esc(profile.status)}</span>\n` +
-    `<span class="t-dim">}</span>`;
+    `<span class="t-dim">}</span>`
+  );
+}
 
-  function render(typed, showResult, cursor) {
-    el.innerHTML =
-      `<span class="t-prompt">iex&gt;</span> ${typed}` +
-      (showResult ? `\n${RESULT}\n<span class="t-prompt">iex&gt;</span> ` : "") +
-      (cursor ? `<span class="cursor" aria-hidden="true"></span>` : "");
+function normalizeTerminalInput(raw) {
+  let s = raw.trim();
+  if (!s) return "";
+  if (s.endsWith(";")) s = s.slice(0, -1).trim();
+  if (s.startsWith("Ivan.")) s = s.slice(5);
+  return s;
+}
+
+function flashSection(id) {
+  const section = document.getElementById(id);
+  if (!section) return;
+  section.classList.remove("section-flash");
+  void section.offsetWidth;
+  section.classList.add("section-flash");
+  section.addEventListener("animationend", () => section.classList.remove("section-flash"), { once: true });
+  section.scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: "start" });
+}
+
+function initTerminal(ctx) {
+  const wrap = document.getElementById("terminal-wrap");
+  const log = document.getElementById("terminal-log");
+  const inputLine = document.getElementById("terminal-input-line");
+  const input = document.getElementById("terminal-input");
+  const hint = document.getElementById("terminal-hint");
+  const INTRO_CMD = "Ivan.who_am_i()";
+  const history = [];
+  let histIdx = -1;
+  let draft = "";
+  let spinnerTimer = null;
+  let accentIdx = 0;
+
+  const COMPLETIONS = [
+    "h()", "help()", "who_am_i()", "packages()", "repos()", "Node.list()",
+    "scroll_to(:packages)", "scroll_to(:projects)", "scroll_to(:writing)",
+    "clipboard(\"github\")", "uptime()", "version()", "deps()", "history()",
+    "ping()", "make_ref()", "secret()", ":observer.start()", ":observer.stop()",
+    "Process.flag(:trap_exit, true)", "IEx.configure(colors: :neon)", "System.halt(0)",
+    'spawn(fn -> :timer.sleep(:infinity) end)',
+  ];
+
+  function stopSpinner() {
+    if (spinnerTimer) { clearInterval(spinnerTimer); spinnerTimer = null; }
   }
 
-  if (REDUCED) { render(CMD, true, true); return; }
+  function appendEntry(html, isCommand) {
+    const entry = document.createElement("div");
+    entry.className = "terminal-entry";
+    entry.innerHTML = html;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+    return entry;
+  }
 
-  let i = 0;
-  render("", false, true);
-  setTimeout(function type() {
-    i++;
-    render(CMD.slice(0, i), false, true);
-    if (i < CMD.length) {
-      setTimeout(type, 45 + Math.random() * 70);
-    } else {
-      setTimeout(() => render(CMD, true, true), 420);
+  function appendCommand(cmd) {
+    appendEntry(`<span class="t-prompt">iex&gt;</span> ${esc(cmd)}`);
+  }
+
+  function appendOutput(html) {
+    if (!html) return;
+    appendEntry(html);
+  }
+
+  function formatUptime(ms) {
+    const s = Math.floor(ms / 1000);
+    if (s < 60) return `${s}s`;
+    const m = Math.floor(s / 60);
+    if (m < 60) return `${m}m ${s % 60}s`;
+    return `${Math.floor(m / 60)}h ${m % 60}m`;
+  }
+
+  function findCard(name) {
+    const q = name.toLowerCase();
+    return [...document.querySelectorAll("#packages-grid .card-name, #repos-grid .card-name")]
+      .find((el) => el.textContent.toLowerCase().includes(q));
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
     }
-  }, 700);
+  }
+
+  function execute(raw) {
+    const cmd = normalizeTerminalInput(raw);
+    if (!cmd) return null;
+
+    if (cmd === "42") return `<span class="t-atom">42</span>`;
+    if (cmd === "h()" || cmd === "help()") {
+      return (
+        `<span class="t-dim"># info</span>\n` +
+        `  <span class="t-key">who_am_i()</span>          <span class="t-dim">profile map</span>\n` +
+        `  <span class="t-key">packages()</span>          <span class="t-dim">hex packages</span>\n` +
+        `  <span class="t-key">repos()</span>             <span class="t-dim">github repos</span>\n` +
+        `  <span class="t-key">Node.list()</span>         <span class="t-dim">connected nodes (links)</span>\n` +
+        `  <span class="t-key">uptime()</span>            <span class="t-dim">session uptime</span>\n` +
+        `  <span class="t-key">version()</span>           <span class="t-dim">site version</span>\n` +
+        `<span class="t-dim"># navigation</span>\n` +
+        `  <span class="t-key">scroll_to(:packages)</span>  <span class="t-dim">:projects, :writing, :hero</span>\n` +
+        `  <span class="t-key">goto("name")</span>        <span class="t-dim">jump to card</span>\n` +
+        `  <span class="t-key">Process.whereis("pkg")</span> <span class="t-dim">hexdocs link</span>\n` +
+        `<span class="t-dim"># utils</span>\n` +
+        `  <span class="t-key">clipboard("github")</span>   <span class="t-dim">copy link to clipboard</span>\n` +
+        `  <span class="t-key">history()</span>           <span class="t-dim">command history</span>\n` +
+        `  <span class="t-key">clear()</span>             <span class="t-dim">clear screen</span>\n` +
+        `<span class="t-dim"># observer easter eggs</span>\n` +
+        `  <span class="t-key">:observer.start()</span>    <span class="t-dim">boost background</span>\n` +
+        `  <span class="t-key">:observer.stop()</span>     <span class="t-dim">pause observer</span>\n` +
+        `  <span class="t-key">IEx.configure(colors: :neon)</span>\n` +
+        `  <span class="t-key">Process.flag(:trap_exit, true)</span>\n` +
+        `  <span class="t-key">System.halt(0)</span>      <span class="t-dim">try it</span>\n` +
+        `  <span class="t-key">make_ref()</span>  <span class="t-key">ping()</span>  <span class="t-key">deps()</span>  <span class="t-key">secret()</span>`
+      );
+    }
+
+    if (cmd === "who_am_i()") return formatProfileMap(ctx.terminalProfile);
+    if (cmd === "clear()") return { action: "clear" };
+
+    if (cmd === "packages()") {
+      const items = sortContentItems(ctx.packages);
+      if (!items.length) return `<span class="t-atom">[]</span>`;
+      const lines = items.map((p) => {
+        const meta = ctx.packageMeta.get(p.name);
+        const ver = meta?.version ? ` <span class="t-dim">v${esc(meta.version)}</span>` : "";
+        const dl = meta?.downloads != null ? ` <span class="t-dim">↓${meta.downloads.toLocaleString("en-US")}</span>` : "";
+        return `  <span class="t-atom">:${esc(p.name)}</span>${ver}${dl}`;
+      });
+      return `<span class="t-dim">[</span>\n${lines.join(",\n")}\n<span class="t-dim">]</span>`;
+    }
+
+    if (cmd === "repos()") {
+      if (!ctx.repos.length) return `<span class="t-dim">loading...</span> <span class="t-dim">(async)</span>`;
+      const lines = ctx.repos.map((r) =>
+        `  <span class="t-str">"${esc(r.name)}"</span> <span class="t-dim">★${r.stargazers_count} · ${esc(r.language || "—")}</span>`
+      );
+      return `<span class="t-dim">[</span>\n${lines.join(",\n")}\n<span class="t-dim">]</span>`;
+    }
+
+    if (cmd === "Node.list()") {
+      const nodes = [
+        `:"github@github.com" <span class="t-dim">→</span> <span class="t-str">github.com/${esc(ctx.profile.githubUser)}</span>`,
+        `:"hex@hex.pm" <span class="t-dim">→</span> <span class="t-str">hex.pm/users/${esc(ctx.profile.hexUser)}</span>`,
+        `:"linkedin@linkedin.com" <span class="t-dim">→</span> <span class="t-str">linkedin</span>`,
+      ];
+      if (isEmailConfigured(ctx.profile.email)) {
+        nodes.push(`:"mail@localhost" <span class="t-dim">→</span> <span class="t-str">${esc(ctx.profile.email.trim())}</span>`);
+      }
+      return `<span class="t-dim">[</span>\n  ${nodes.join(",\n  ")}\n<span class="t-dim">]</span>`;
+    }
+
+    if (cmd === "uptime()") {
+      return `<span class="t-atom">:${formatUptime(Date.now() - ctx.bootTime)}</span>`;
+    }
+
+    if (cmd === "version()") {
+      return `<span class="t-str">"${esc(String(ctx.siteVersion))}"</span>`;
+    }
+
+    if (cmd === "deps()") {
+      return (
+        `<span class="t-dim">[</span>\n` +
+        `  {<span class="t-atom">:observer</span>, <span class="t-str">"~> 0.0.0"</span>, [<span class="t-atom">:only</span>: <span class="t-atom">:dev</span>]},\n` +
+        `  {<span class="t-atom">:zero_deps</span>, <span class="t-str">"~> ∞"</span>, []}\n` +
+        `<span class="t-dim">]</span>`
+      );
+    }
+
+    if (cmd === "ping()") {
+      return { action: "delay", ms: 180, output: `<span class="t-atom">:pong</span>` };
+    }
+
+    if (cmd === "make_ref()") {
+      const a = (Math.random() * 0xffffff) | 0;
+      const b = (Math.random() * 0xffffff) | 0;
+      return `<span class="t-dim">#Reference&lt;</span><span class="t-atom">0.${a}.${b}</span><span class="t-dim">&gt;</span>`;
+    }
+
+    if (cmd === "secret()") {
+      return `<span class="t-dim">hint:</span> the observer sees everything — try <span class="t-key">:observer.start()</span>`;
+    }
+
+    if (cmd === "history()") {
+      if (!history.length) return `<span class="t-atom">[]</span>`;
+      const lines = history.map((h) => `  <span class="t-str">"${esc(h)}"</span>`);
+      return `<span class="t-dim">[</span>\n${lines.join(",\n")}\n<span class="t-dim">]</span>`;
+    }
+
+    if (cmd === ":observer.start()") {
+      setObserverPaused(false);
+      emitTweaks({ density: 72, sparks: true });
+      flashSection("packages-section");
+      return `<span class="t-atom">:ok</span> <span class="t-dim">observer started — processes visible</span>`;
+    }
+
+    if (cmd === ":observer.stop()") {
+      setObserverPaused(true);
+      return `<span class="t-atom">:ok</span> <span class="t-dim">observer stopped — static mode</span>`;
+    }
+
+    if (cmd === "Process.flag(:trap_exit, true)") {
+      emitTweaks({ sparks: true, cursorEffect: "attract", cursorStrength: 35 });
+      return `<span class="t-atom">true</span> <span class="t-dim">trapping exits — sparks enabled</span>`;
+    }
+
+    if (cmd === "IEx.configure(colors: :neon)") {
+      accentIdx = (accentIdx + 1) % ACCENT_CYCLE.length;
+      emitTweaks({ accent: ACCENT_CYCLE[accentIdx] });
+      return `<span class="t-atom">:ok</span> <span class="t-dim">accent →</span> <span class="t-str">${esc(ACCENT_CYCLE[accentIdx])}</span>`;
+    }
+
+    if (cmd === "System.halt(0)") {
+      return (
+        `<span class="t-dim">initiating graceful shutdown...</span>\n` +
+        `<span class="t-dim">** (EXIT) still here — BEAM is too resilient to halt from iex</span>`
+      );
+    }
+
+    if (cmd === 'spawn(fn -> :timer.sleep(:infinity) end)') {
+      const pid = `0.${((Math.random() * 899) | 0) + 100}.0`;
+      return { action: "spinner", pid };
+    }
+
+    let m;
+
+    m = cmd.match(/^scroll_to\((:[a-z_]+)\)$/);
+    if (m) {
+      const map = {
+        ":packages": "packages-section",
+        ":projects": "projects-section",
+        ":writing": "writing-section",
+        ":hero": "app",
+        ":footer": "footer-line",
+      };
+      const target = map[m[1]];
+      if (!target) {
+        return `<span class="t-dim">** (ArgumentError) unknown section ${esc(m[1])}</span>`;
+      }
+      if (target === "app") {
+        window.scrollTo({ top: 0, behavior: REDUCED ? "auto" : "smooth" });
+      } else if (target === "footer-line") {
+        document.getElementById("footer-line")?.scrollIntoView({ behavior: REDUCED ? "auto" : "smooth" });
+      } else {
+        const section = document.getElementById(target);
+        if (section?.hidden) return `<span class="t-dim">** (ArgumentError) section ${esc(m[1])} not available</span>`;
+        flashSection(target);
+      }
+      return `<span class="t-atom">:ok</span>`;
+    }
+
+    m = cmd.match(/^goto\(["']([^"']+)["']\)$/);
+    if (m) {
+      const card = findCard(m[1]);
+      if (!card) return `<span class="t-dim">** (MatchError) no card matched "${esc(m[1])}"</span>`;
+      const link = card.closest("a") || card;
+      link.scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: "center" });
+      link.classList.add("section-flash");
+      setTimeout(() => link.classList.remove("section-flash"), 1400);
+      return `<span class="t-atom">:ok</span> <span class="t-dim">→</span> <span class="t-str">${esc(card.textContent.trim())}</span>`;
+    }
+
+    m = cmd.match(/^Process\.whereis\(["']([^"']+)["']\)$/);
+    if (m) {
+      const name = m[1];
+      const pkg = ctx.packages.find((p) => p.name === name);
+      if (pkg) {
+        return `<span class="t-dim">#PID&lt;</span><span class="t-atom">0.${esc(name.length * 137)}.0</span><span class="t-dim">&gt;</span> <span class="t-dim">→</span> <span class="t-str">hexdocs.pm/${esc(name)}</span>`;
+      }
+      return `<span class="t-dim">** (ArgumentError) process "${esc(name)}" not registered</span>`;
+    }
+
+    m = cmd.match(/^clipboard\(["']([^"']+)["']\)$/);
+    if (m) {
+      const key = m[1].toLowerCase();
+      const urls = {
+        github: `https://github.com/${ctx.profile.githubUser}`,
+        hex: `https://hex.pm/users/${ctx.profile.hexUser}`,
+        linkedin: ctx.profile.linkedin,
+        email: isEmailConfigured(ctx.profile.email) ? `mailto:${ctx.profile.email.trim()}` : null,
+      };
+      const url = urls[key];
+      if (!url) return `<span class="t-dim">** (ArgumentError) unknown node "${esc(m[1])}"</span>`;
+      return { action: "clipboard", url, label: key };
+    }
+
+    return `<span class="t-dim">** (UndefinedFunctionError) function ${esc(cmd)} is undefined or private</span>\n<span class="t-dim">    (try h() for available commands)</span>`;
+  }
+
+  async function runCommand(raw) {
+    stopSpinner();
+    const cmd = normalizeTerminalInput(raw);
+    if (!cmd) return;
+
+    appendCommand(raw.trim());
+    if (history[history.length - 1] !== raw.trim()) history.push(raw.trim());
+    histIdx = history.length;
+
+    const result = execute(raw);
+
+    if (result && typeof result === "object") {
+      if (result.action === "clear") {
+        log.innerHTML = "";
+        return;
+      }
+      if (result.action === "delay") {
+        await new Promise((r) => setTimeout(r, result.ms));
+        appendOutput(result.output);
+        return;
+      }
+      if (result.action === "clipboard") {
+        const ok = await copyText(result.url);
+        appendOutput(
+          ok
+            ? `<span class="t-atom">:ok</span> <span class="t-dim">copied</span> <span class="t-str">${esc(result.label)}</span>`
+            : `<span class="t-dim">** (RuntimeError) clipboard unavailable</span>`
+        );
+        return;
+      }
+      if (result.action === "spinner") {
+        const entry = appendEntry(`<span class="t-dim">spawned pid #${esc(result.pid)} — sleeping</span>`);
+        let dots = 0;
+        spinnerTimer = setInterval(() => {
+          dots = (dots + 1) % 4;
+          entry.innerHTML = `<span class="t-dim">spawned pid #${esc(result.pid)} — sleeping${".".repeat(dots)}</span>`;
+        }, 420);
+        return;
+      }
+    }
+
+    appendOutput(result);
+  }
+
+  function enableRepl() {
+    inputLine.hidden = false;
+    hint.hidden = false;
+    input.focus();
+    wrap.classList.add("focused");
+  }
+
+  function runIntro() {
+    const profile = ctx.terminalProfile;
+    const resultHtml = formatProfileMap(profile);
+
+    function showIntroLine(typed, showResult, withCursor) {
+      log.innerHTML =
+        `<div class="terminal-entry"><span class="t-prompt">iex&gt;</span> ${esc(typed)}` +
+        (withCursor ? `<span class="cursor" aria-hidden="true"></span>` : "") +
+        `</div>` +
+        (showResult ? `<div class="terminal-entry">${resultHtml}</div>` : "");
+      log.scrollTop = log.scrollHeight;
+    }
+
+    if (REDUCED) {
+      showIntroLine(INTRO_CMD, true, false);
+      enableRepl();
+      return;
+    }
+
+    let i = 0;
+    showIntroLine("", false, true);
+    setTimeout(function type() {
+      i++;
+      showIntroLine(INTRO_CMD.slice(0, i), false, true);
+      if (i < INTRO_CMD.length) {
+        setTimeout(type, 45 + Math.random() * 70);
+      } else {
+        setTimeout(() => {
+          showIntroLine(INTRO_CMD, true, false);
+          enableRepl();
+        }, 420);
+      }
+    }, 700);
+  }
+
+  function tabComplete() {
+    const val = input.value;
+    const matches = COMPLETIONS.filter((c) => c.startsWith(val) || c.toLowerCase().startsWith(val.toLowerCase()));
+    if (!matches.length) return;
+    if (matches.length === 1) {
+      input.value = matches[0];
+      return;
+    }
+    const prefix = matches.reduce((a, b) => {
+      let i = 0;
+      while (i < a.length && i < b.length && a[i] === b[i]) i++;
+      return a.slice(0, i);
+    }, matches[0]);
+    if (prefix.length > val.length) input.value = prefix;
+    else appendOutput(`<span class="t-dim">${matches.map((c) => esc(c)).join("  ")}</span>`);
+  }
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const val = input.value;
+      input.value = "";
+      draft = "";
+      histIdx = history.length;
+      runCommand(val);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (!history.length) return;
+      if (histIdx === history.length) draft = input.value;
+      histIdx = Math.max(0, histIdx - 1);
+      input.value = history[histIdx];
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (!history.length) return;
+      histIdx = Math.min(history.length, histIdx + 1);
+      input.value = histIdx === history.length ? draft : history[histIdx];
+    } else if (e.key === "Tab") {
+      e.preventDefault();
+      tabComplete();
+    } else if (e.key === "l" && e.ctrlKey) {
+      e.preventDefault();
+      log.innerHTML = "";
+    }
+  });
+
+  input.addEventListener("focus", () => wrap.classList.add("focused"));
+  input.addEventListener("blur", () => wrap.classList.remove("focused"));
+  wrap.addEventListener("click", () => input.focus());
+  wrap.addEventListener("keydown", (e) => {
+    if (e.target === input) return;
+    if (e.key.length === 1 || e.key === "Backspace" || e.key === "Delete") input.focus();
+  });
+
+  runIntro();
 }
 
 function isEmailConfigured(email) {
@@ -898,6 +1413,7 @@ function renderPackages(packages) {
         const ver = data.latest_stable_version || data.latest_version || (data.releases && data.releases[0] && data.releases[0].version);
         if (ver) a.querySelector('[data-role="version"]').textContent = `v${ver}`;
         const dl = (data.downloads && (data.downloads.all ?? data.downloads.total)) || 0;
+        terminalCtx.packageMeta.set(pkg.name, { version: ver || null, downloads: dl });
         countUp(a.querySelector('[data-role="downloads"]'), dl);
       })
       .catch(() => {
@@ -984,7 +1500,9 @@ function renderRepos(repos) {
 async function loadRepos(entries) {
   const sorted = sortContentItems(entries);
   const repos = await Promise.all(sorted.map(resolveRepo));
+  terminalCtx.repos = repos;
   renderRepos(repos);
+  return repos;
 }
 
 function renderWriting(items) {
@@ -1110,8 +1628,21 @@ function showLoadError(message) {
 
 async function boot(site) {
   const profile = site.profile;
+  terminalCtx.profile = profile;
+  terminalCtx.terminalProfile = profile.terminal || {
+    role: "Senior Full-Stack Engineer",
+    stack: ["Elixir", "JavaScript", "Python"],
+    location: "Antalya, TR (UTC+3)",
+    status: ":available",
+  };
+  terminalCtx.packages = site.packages;
+  terminalCtx.siteVersion = site.version || 1;
+  terminalCtx.bootTime = Date.now();
+  terminalCtx.packageMeta.clear();
+  terminalCtx.repos = [];
+
   wireHeroLinks(profile);
-  startTerminal(profile.terminal);
+  initTerminal(terminalCtx);
   seedPalette(profile, site.packages);
   renderPackages(site.packages);
   await loadRepos(site.repos);
