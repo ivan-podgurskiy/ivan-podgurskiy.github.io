@@ -1,6 +1,6 @@
 {
   "$schema": "./site.schema.json",
-  "version": 2,
+  "version": 3,
   "profile": {
     "githubUser": "ivan-podgurskiy",
     "hexUser": "ivan-podgurskiy",
@@ -8,7 +8,7 @@
     "linkedin": "https://www.linkedin.com/in/ivanpodgurskiy/",
     "terminal": {
       "role": "Senior Full-Stack Engineer",
-      "stack": ["Elixir", "JavaScript", "Python"],
+      "stack": ["Elixir", "TypeScript", "Python", "AWS"],
       "location": "Antalya, TR (UTC+3)",
       "status": ":available"
     }
@@ -16,106 +16,228 @@
   "packages": [
     {
       "name": "safe_atom",
+      "registry": "hex",
       "desc": "Whitelist-based casting of values to atoms without growing the VM atom table from untrusted input.",
       "pinned": true,
       "order": 1
     },
     {
       "name": "humanizer",
-      "desc": "Human-friendly formatting for Elixir: bytes, durations, relative time, large numbers, ordinals and list joins.",
+      "registry": "hex",
+      "desc": "Human-friendly formatting for Elixir: bytes, durations, relative time, large numbers, percentages, thousands separators, ordinals, string truncation and list joins. English-only, zero config.",
       "pinned": true,
       "order": 2
     },
     {
       "name": "jitter",
-      "desc": "Backoff jitter strategies (No, Full, Equal, Decorrelated) as composable Stream transformers.",
+      "registry": "hex",
+      "desc": "Backoff jitter strategies (No, Full, Equal, Decorrelated) from Marc Brooker's Exponential Backoff and Jitter, as composable Stream transformers.",
       "pinned": true,
       "order": 3
     },
     {
       "name": "frozen_clock",
-      "desc": "Async-safe, process-local freezing of DateTime.utc_now/0 for tests — no behaviours, no mocks.",
+      "registry": "hex",
+      "desc": "Async-safe, process-local freezing of DateTime.utc_now/0 for tests — no behaviours, no mocks, no struct threaded through your code.",
       "pinned": false,
       "order": 4
+    },
+    {
+      "name": "shell_words",
+      "registry": "hex",
+      "desc": "POSIX-like shell word splitting, escaping, and joining. An Elixir take on Python's shlex and Ruby's Shellwords.",
+      "pinned": false,
+      "order": 5
+    },
+    {
+      "name": "one_flight",
+      "registry": "hex",
+      "desc": "Collapse concurrent duplicate Elixir calls into one supervised execution per key.",
+      "pinned": false,
+      "order": 6
+    },
+    {
+      "name": "robots_txt",
+      "registry": "hex",
+      "desc": "RFC 9309 robots.txt (robotstxt) parser and matcher for the Robots Exclusion Protocol.",
+      "pinned": false,
+      "order": 7
+    },
+    {
+      "name": "gitignore",
+      "registry": "hex",
+      "desc": "Correct gitignore and wildmatch semantics for Elixir.",
+      "pinned": false,
+      "order": 8
+    },
+    {
+      "name": "dockerignore",
+      "registry": "hex",
+      "desc": "Parse and match .dockerignore files in Elixir with Docker-compatible semantics.",
+      "pinned": false,
+      "order": 9
+    },
+    {
+      "name": "http_digest",
+      "registry": "hex",
+      "desc": "RFC 9530 Digest Fields for Elixir: build, parse, and verify Content-Digest, Repr-Digest, and Want-* headers.",
+      "pinned": false,
+      "order": 10
+    },
+    {
+      "name": "message_signatures",
+      "registry": "hex",
+      "desc": "RFC 9421 HTTP Message Signatures for Elixir: create and verify signatures over HTTP message components with strict signature-base canonicalization.",
+      "pinned": false,
+      "order": 11
+    },
+    {
+      "name": "editorconfig_core",
+      "registry": "hex",
+      "desc": "EditorConfig Core implementation for Elixir: parser, glob matcher, resolver, and CLI.",
+      "pinned": false,
+      "order": 12
+    },
+    {
+      "name": "git_mailmap",
+      "registry": "hex",
+      "desc": "Parse, resolve, and serialize Git .mailmap files in Elixir to canonicalize author and committer identities.",
+      "pinned": false,
+      "order": 13
+    },
+    {
+      "name": "spdx_expression",
+      "registry": "hex",
+      "desc": "Validate and canonicalize PEP 639-compatible SPDX license expressions in Elixir.",
+      "pinned": false,
+      "order": 14
+    },
+    {
+      "name": "rxing",
+      "registry": "hex",
+      "desc": "Decode barcodes from image binaries with Rust-backed performance.",
+      "pinned": false,
+      "order": 15
+    },
+    {
+      "name": "vcf",
+      "registry": "hex",
+      "desc": "VCF 4.1–4.5 parser, validator, streaming reader, and writer for Elixir.",
+      "pinned": false,
+      "order": 16
+    },
+    {
+      "name": "security_txt",
+      "registry": "hex",
+      "desc": "Parse, validate, and serialize RFC 9116 security.txt files in Elixir.",
+      "pinned": false,
+      "order": 17
+    },
+    {
+      "name": "git_trailers",
+      "registry": "hex",
+      "desc": "Parse, serialize, and manipulate Git commit message trailers in Elixir.",
+      "pinned": false,
+      "order": 18
+    },
+    {
+      "name": "git-mailmap",
+      "registry": "npm",
+      "desc": "Parse, resolve, and serialize Git .mailmap files in JavaScript and TypeScript to canonicalize author and committer identities.",
+      "pinned": false,
+      "order": 19
+    },
+    {
+      "name": "security-txt-parser",
+      "registry": "npm",
+      "desc": "Parse, validate, and serialize RFC 9116 security.txt files in TypeScript.",
+      "pinned": false,
+      "order": 20
+    },
+    {
+      "name": "git-trailers",
+      "registry": "npm",
+      "desc": "Parse, serialize, and manipulate Git commit message trailers in JavaScript and TypeScript.",
+      "pinned": false,
+      "order": 21
     }
   ],
   "repos": [
     {
-      "id": "jitter",
-      "source": "github",
-      "repo": "ivan-podgurskiy/jitter",
-      "pinned": true,
-      "order": 1
-    },
-    {
-      "id": "safe_atom",
-      "source": "github",
-      "repo": "ivan-podgurskiy/safe_atom",
-      "pinned": true,
-      "order": 2
-    },
-    {
-      "id": "humanizer",
-      "source": "github",
-      "repo": "ivan-podgurskiy/humanizer",
-      "pinned": true,
-      "order": 3
-    },
-    {
       "id": "elixir-design-patterns",
       "source": "github",
       "repo": "ivan-podgurskiy/elixir-design-patterns",
+      "description": "Practical, runnable examples of OTP and functional design patterns in Elixir. Each pattern is a self-contained module with tests, docs, and a real-world use case.",
+      "language": "Elixir",
+      "stars": 1,
+      "pushed_at": "2026-06-05",
       "pinned": true,
-      "order": 4
+      "order": 1
     },
     {
       "id": "github-actions-templates",
       "source": "github",
       "repo": "ivan-podgurskiy/github-actions-templates",
+      "description": "Reusable, production-ready GitHub Actions workflow templates for common CI/CD patterns.",
+      "stars": 0,
+      "pushed_at": "2026-02-14",
       "pinned": true,
-      "order": 5
+      "order": 2
     },
     {
       "id": "docker-compose-recipes",
       "source": "github",
       "repo": "ivan-podgurskiy/docker-compose-recipes",
+      "description": "A collection of ready-to-use Docker Compose configurations for common development environments and tools. Each stack is designed to be self-contained and can be launched with a single command.",
+      "language": "Makefile",
+      "stars": 0,
+      "pushed_at": "2026-02-13",
       "pinned": true,
-      "order": 6
+      "order": 3
     },
     {
       "id": "sysvis",
       "source": "github",
       "repo": "ivan-podgurskiy/sysvis",
+      "description": "An interactive system design playground for exploring how large-scale products move requests through distributed infrastructure.",
+      "language": "TypeScript",
+      "stars": 0,
+      "pushed_at": "2026-06-12",
       "pinned": false,
-      "order": 7
+      "order": 4
     },
     {
       "id": "huntr",
       "source": "github",
       "repo": "ivan-podgurskiy/huntr",
+      "description": "Job application copilot built with Mastra: ingest postings, score against your profile, notify via Telegram.",
+      "language": "TypeScript",
+      "stars": 0,
+      "pushed_at": "2026-06-18",
       "pinned": false,
-      "order": 8
+      "order": 5
     },
     {
       "id": "royal-shortener",
       "source": "github",
       "repo": "ivan-podgurskiy/royal-shortener",
+      "description": "A URL shortener with a Lustre (Gleam → JS) frontend and a Gleam (BEAM) backend",
+      "language": "Gleam",
+      "stars": 0,
+      "pushed_at": "2026-06-16",
       "pinned": false,
-      "order": 9
-    },
-    {
-      "id": "frozen_clock",
-      "source": "github",
-      "repo": "ivan-podgurskiy/frozen_clock",
-      "pinned": false,
-      "order": 10
+      "order": 6
     },
     {
       "id": "langchain-document-pipeline",
       "source": "github",
       "repo": "ivan-podgurskiy/langchain-document-pipeline",
+      "description": "RAG pipeline for medical document processing with LangChain + Claude + pgvector",
+      "language": "Python",
+      "stars": 0,
+      "pushed_at": "2026-06-05",
       "pinned": false,
-      "order": 11
+      "order": 7
     }
   ],
   "writing": []

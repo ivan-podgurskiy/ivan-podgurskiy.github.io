@@ -69,10 +69,15 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["name", "desc"],
+          "required": ["name", "desc", "registry"],
           "properties": {
             "name": { "type": "string", "minLength": 1 },
             "desc": { "type": "string", "minLength": 1 },
+            "registry": {
+              "type": "string",
+              "enum": ["hex", "npm"],
+              "description": "Package registry used for version, downloads, and outbound links."
+            },
             "pinned": { "type": "boolean" },
             "order": { "type": "integer", "minimum": 0 },
             "visible": { "type": "boolean" }

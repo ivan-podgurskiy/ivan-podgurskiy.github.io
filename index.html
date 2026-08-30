@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Observer — Ivan, Senior Full-Stack Engineer</title>
-<meta name="description" content="Ivan — Senior Full-Stack Engineer (Elixir, JavaScript, Python). Portfolio styled as a BEAM mission-control dashboard.">
+<meta name="description" content="Ivan — Senior Full-Stack Engineer (Elixir, TypeScript, Python, AWS). Portfolio styled as a BEAM mission-control dashboard.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
@@ -305,6 +305,89 @@ a:focus-visible, button:focus-visible {
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 18px;
 }
+#repos-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+#repos-grid .card {
+  padding: 24px 22px;
+  min-height: 188px;
+}
+@media (max-width: 720px) {
+  #repos-grid { grid-template-columns: 1fr; }
+}
+
+.process-table {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0 6px;
+  overflow: hidden;
+}
+.process-head,
+.process-row {
+  display: grid;
+  grid-template-columns: 10px minmax(8rem, 1.5fr) 4.8rem 4.4rem 8.2rem 6.6rem;
+  gap: 12px;
+  align-items: center;
+  padding: 0 18px;
+}
+.process-head {
+  min-height: 36px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  border-bottom: 1px solid var(--glass-border);
+}
+.process-row {
+  min-height: 48px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.process-row:hover { text-decoration: none; }
+.process-row + .process-row { box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.06); }
+.process-row:hover,
+.process-row:focus-visible {
+  background: var(--glass-bg-hover);
+}
+.process-row .card-name {
+  font-size: 14.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.process-row .badge { margin-left: 0; justify-self: start; }
+.process-reg,
+.process-dest,
+.process-row .dl {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+.process-row .dl { color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+.process-dest { justify-self: end; }
+.process-meta { display: contents; }
+
+@media (max-width: 720px) {
+  .process-head { display: none; }
+  .process-row {
+    grid-template-columns: 10px 1fr auto;
+    padding: 12px 16px;
+    min-height: 56px;
+    row-gap: 4px;
+  }
+  .process-row .status-dot { grid-row: 1 / 3; align-self: start; margin-top: 8px; }
+  .process-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    grid-column: 2 / -1;
+    min-width: 0;
+  }
+  .process-dest { margin-left: auto; }
+}
 .card {
   display: flex;
   flex-direction: column;
@@ -362,6 +445,7 @@ a:focus-visible, button:focus-visible {
   font-family: var(--mono);
   font-size: 12.5px;
   color: var(--ink-faint);
+  flex-wrap: wrap;
 }
 .card-meta .dl { color: var(--ink-dim); }
 .card-meta .dl strong { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -559,6 +643,7 @@ footer .atom { color: var(--accent); }
     <nav class="hero-links" aria-label="Contact links">
       <a class="glass pill" data-link="github" href="#" target="_blank" rel="noopener" aria-label="GitHub profile"><span class="pfx">&gt;</span> GitHub</a>
       <a class="glass pill" data-link="hex" href="#" target="_blank" rel="noopener" aria-label="hex.pm profile"><span class="pfx">&gt;</span> hex.pm</a>
+      <a class="glass pill" data-link="npm" href="#" target="_blank" rel="noopener" aria-label="npm profile"><span class="pfx">&gt;</span> npm</a>
       <a class="glass pill" data-link="linkedin" href="#" target="_blank" rel="noopener" aria-label="LinkedIn profile"><span class="pfx">&gt;</span> LinkedIn</a>
       <a class="glass pill" data-link="email" href="#" aria-label="Send email" hidden><span class="pfx">&gt;</span> Email</a>
       <span class="kbd-hint"><kbd>⌘</kbd><kbd>K</kbd> command palette</span>
@@ -568,9 +653,9 @@ footer .atom { color: var(--accent); }
   <section class="wrap" id="packages-section" aria-labelledby="packages-h" data-screen-label="Packages">
     <div class="section-head reveal">
       <h2 id="packages-h"><span class="punct">:</span>observer.start<span class="punct">()</span></h2>
-      <span class="sub">— published hex packages, all processes alive</span>
+      <span class="sub">— published packages, all processes alive</span>
     </div>
-    <div class="grid" id="packages-grid"></div>
+    <div class="glass process-table reveal" id="packages-grid"></div>
   </section>
 
   <section class="wrap" id="projects-section" aria-labelledby="projects-h" data-screen-label="Projects">
@@ -878,6 +963,58 @@ function observeReveals() {
   requestAnimationFrame(frame);
 })();
 
+function packageRegistry(pkg) {
+  return pkg && pkg.registry === "npm" ? "npm" : "hex";
+}
+
+function packageHref(pkg) {
+  const name = encodeURIComponent(pkg.name);
+  return packageRegistry(pkg) === "npm"
+    ? `https://www.npmjs.com/package/${name}`
+    : `https://hexdocs.pm/${name}`;
+}
+
+function packageMetaKey(pkg) {
+  return `${packageRegistry(pkg)}:${pkg.name}`;
+}
+
+function packageLinkHost(pkg) {
+  return packageRegistry(pkg) === "npm" ? `npmjs.com/package/${pkg.name}` : `hexdocs.pm/${pkg.name}`;
+}
+
+function formatPackageAtom(name) {
+  return /^[a-z_][a-z0-9_]*$/i.test(name) ? `:${esc(name)}` : `:"${esc(name)}"`;
+}
+
+function npmProfileUrl(profile) {
+  return `https://www.npmjs.com/~${encodeURIComponent(profile.githubUser)}`;
+}
+
+async function fetchPackageStats(pkg) {
+  if (packageRegistry(pkg) === "npm") {
+    const end = new Date().toISOString().slice(0, 10);
+    const [packRes, dlRes] = await Promise.all([
+      fetch(`https://registry.npmjs.org/${encodeURIComponent(pkg.name)}/latest`),
+      fetch(`https://api.npmjs.org/downloads/point/2015-01-01:${end}/${encodeURIComponent(pkg.name)}`),
+    ]);
+    if (!packRes.ok) throw new Error(packRes.status);
+    const pack = await packRes.json();
+    let downloads = 0;
+    if (dlRes.ok) {
+      const dl = await dlRes.json();
+      downloads = dl.downloads || 0;
+    }
+    return { version: pack.version || null, downloads };
+  }
+
+  const response = await fetch(`https://hex.pm/api/packages/${encodeURIComponent(pkg.name)}`);
+  if (!response.ok) throw new Error(response.status);
+  const data = await response.json();
+  const version = data.latest_stable_version || data.latest_version || (data.releases && data.releases[0] && data.releases[0].version) || null;
+  const downloads = (data.downloads && (data.downloads.all ?? data.downloads.total)) || 0;
+  return { version, downloads };
+}
+
 function formatProfileMap(profile) {
   const stack = profile.stack || [];
   return (
@@ -992,7 +1129,7 @@ function initTerminal(ctx) {
       return (
         `<span class="t-dim"># info</span>\n` +
         `  <span class="t-key">who_am_i()</span>          <span class="t-dim">profile map</span>\n` +
-        `  <span class="t-key">packages()</span>          <span class="t-dim">hex packages</span>\n` +
+        `  <span class="t-key">packages()</span>          <span class="t-dim">package catalog</span>\n` +
         `  <span class="t-key">repos()</span>             <span class="t-dim">github repos</span>\n` +
         `  <span class="t-key">Node.list()</span>         <span class="t-dim">connected nodes (links)</span>\n` +
         `  <span class="t-key">uptime()</span>            <span class="t-dim">session uptime</span>\n` +
@@ -1000,7 +1137,7 @@ function initTerminal(ctx) {
         `<span class="t-dim"># navigation</span>\n` +
         `  <span class="t-key">scroll_to(:packages)</span>  <span class="t-dim">:projects, :writing, :hero</span>\n` +
         `  <span class="t-key">goto("name")</span>        <span class="t-dim">jump to card</span>\n` +
-        `  <span class="t-key">Process.whereis("pkg")</span> <span class="t-dim">hexdocs link</span>\n` +
+        `  <span class="t-key">Process.whereis("pkg")</span> <span class="t-dim">hexdocs or npm link</span>\n` +
         `<span class="t-dim"># utils</span>\n` +
         `  <span class="t-key">clipboard("github")</span>   <span class="t-dim">copy link to clipboard</span>\n` +
         `  <span class="t-key">history()</span>           <span class="t-dim">command history</span>\n` +
@@ -1022,10 +1159,11 @@ function initTerminal(ctx) {
       const items = sortContentItems(ctx.packages);
       if (!items.length) return `<span class="t-atom">[]</span>`;
       const lines = items.map((p) => {
-        const meta = ctx.packageMeta.get(p.name);
+        const meta = ctx.packageMeta.get(packageMetaKey(p));
         const ver = meta?.version ? ` <span class="t-dim">v${esc(meta.version)}</span>` : "";
         const dl = meta?.downloads != null ? ` <span class="t-dim">↓${meta.downloads.toLocaleString("en-US")}</span>` : "";
-        return `  <span class="t-atom">:${esc(p.name)}</span>${ver}${dl}`;
+        const registry = ` <span class="t-atom">:${esc(packageRegistry(p))}</span>`;
+        return `  <span class="t-atom">${formatPackageAtom(p.name)}</span>${ver}${dl}${registry}`;
       });
       return `<span class="t-dim">[</span>\n${lines.join(",\n")}\n<span class="t-dim">]</span>`;
     }
@@ -1042,6 +1180,7 @@ function initTerminal(ctx) {
       const nodes = [
         `:"github@github.com" <span class="t-dim">→</span> <span class="t-str">github.com/${esc(ctx.profile.githubUser)}</span>`,
         `:"hex@hex.pm" <span class="t-dim">→</span> <span class="t-str">hex.pm/users/${esc(ctx.profile.hexUser)}</span>`,
+        `:"npm@npmjs.com" <span class="t-dim">→</span> <span class="t-str">npmjs.com/~${esc(ctx.profile.githubUser)}</span>`,
         `:"linkedin@linkedin.com" <span class="t-dim">→</span> <span class="t-str">linkedin</span>`,
       ];
       if (isEmailConfigured(ctx.profile.email)) {
@@ -1165,7 +1304,7 @@ function initTerminal(ctx) {
       const name = m[1];
       const pkg = ctx.packages.find((p) => p.name === name);
       if (pkg) {
-        return `<span class="t-dim">#PID&lt;</span><span class="t-atom">0.${esc(name.length * 137)}.0</span><span class="t-dim">&gt;</span> <span class="t-dim">→</span> <span class="t-str">hexdocs.pm/${esc(name)}</span>`;
+        return `<span class="t-dim">#PID&lt;</span><span class="t-atom">0.${esc(name.length * 137)}.0</span><span class="t-dim">&gt;</span> <span class="t-dim">→</span> <span class="t-str">${esc(packageLinkHost(pkg))}</span>`;
       }
       return `<span class="t-dim">** (ArgumentError) process "${esc(name)}" not registered</span>`;
     }
@@ -1176,6 +1315,7 @@ function initTerminal(ctx) {
       const urls = {
         github: `https://github.com/${ctx.profile.githubUser}`,
         hex: `https://hex.pm/users/${ctx.profile.hexUser}`,
+        npm: npmProfileUrl(ctx.profile),
         linkedin: ctx.profile.linkedin,
         email: isEmailConfigured(ctx.profile.email) ? `mailto:${ctx.profile.email.trim()}` : null,
       };
@@ -1234,8 +1374,10 @@ function initTerminal(ctx) {
   function enableRepl() {
     inputLine.hidden = false;
     hint.hidden = false;
-    input.focus();
-    wrap.classList.add("focused");
+  }
+
+  function focusInput() {
+    input.focus({ preventScroll: true });
   }
 
   function runIntro() {
@@ -1320,10 +1462,10 @@ function initTerminal(ctx) {
 
   input.addEventListener("focus", () => wrap.classList.add("focused"));
   input.addEventListener("blur", () => wrap.classList.remove("focused"));
-  wrap.addEventListener("click", () => input.focus());
+  wrap.addEventListener("click", () => focusInput());
   wrap.addEventListener("keydown", (e) => {
     if (e.target === input) return;
-    if (e.key.length === 1 || e.key === "Backspace" || e.key === "Delete") input.focus();
+    if (e.key.length === 1 || e.key === "Backspace" || e.key === "Delete") focusInput();
   });
 
   runIntro();
@@ -1337,6 +1479,7 @@ function wireHeroLinks(profile) {
   const map = {
     github: `https://github.com/${profile.githubUser}`,
     hex: `https://hex.pm/users/${profile.hexUser}`,
+    npm: npmProfileUrl(profile),
     linkedin: profile.linkedin,
   };
   Object.entries(map).forEach(([key, href]) => {
@@ -1359,6 +1502,7 @@ function seedPalette(profile, packages) {
   const links = [
     { kind: "link", label: "GitHub", desc: "profile", url: `https://github.com/${profile.githubUser}` },
     { kind: "link", label: "hex.pm", desc: "profile", url: `https://hex.pm/users/${profile.hexUser}` },
+    { kind: "link", label: "npm", desc: "profile", url: npmProfileUrl(profile) },
     { kind: "link", label: "LinkedIn", desc: "profile", url: profile.linkedin },
   ];
   if (isEmailConfigured(profile.email)) {
@@ -1366,11 +1510,11 @@ function seedPalette(profile, packages) {
   }
   [
     ...links,
-    ...packages.map((p) => ({
-      kind: "package",
+    ...packages.filter((p) => p.visible !== false).map((p) => ({
+      kind: packageRegistry(p),
       label: p.name,
       desc: p.desc,
-      url: `https://hexdocs.pm/${p.name}`,
+      url: packageHref(p),
     })),
   ].forEach(paletteAdd);
 }
@@ -1388,33 +1532,44 @@ function countUp(el, target) {
 }
 
 function renderPackages(packages) {
-  const grid = document.getElementById("packages-grid");
-  grid.innerHTML = "";
+  const table = document.getElementById("packages-grid");
+  table.innerHTML = "";
+  const head = document.createElement("div");
+  head.className = "process-head";
+  head.setAttribute("aria-hidden", "true");
+  head.innerHTML =
+    `<span></span>` +
+    `<span>Process</span>` +
+    `<span>Version</span>` +
+    `<span class="process-meta"><span>Registry</span><span>Downloads</span><span></span></span>`;
+  table.appendChild(head);
+
   sortContentItems(packages).forEach((pkg) => {
+    const registry = packageRegistry(pkg);
+    const dest = registry === "npm" ? "npm" : "hexdocs";
     const a = document.createElement("a");
-    a.className = "glass card reveal";
-    a.href = `https://hexdocs.pm/${encodeURIComponent(pkg.name)}`;
+    a.className = "process-row";
+    a.href = packageHref(pkg);
     a.target = "_blank";
     a.rel = "noopener";
-    a.setAttribute("aria-label", `${pkg.name} documentation on hexdocs`);
+    a.dataset.registry = registry;
+    a.setAttribute("aria-label", registry === "npm" ? `${pkg.name} on npm` : `${pkg.name} documentation on hexdocs`);
     a.innerHTML =
-      `<div class="card-top">` +
       `<span class="status-dot" aria-hidden="true"></span>` +
       `<span class="card-name">${esc(pkg.name)}</span>` +
       `<span class="badge" data-role="version">v—</span>` +
-      `</div>` +
-      `<p class="card-desc">${esc(pkg.desc)}</p>` +
-      `<div class="card-meta"><span class="dl">↓ <strong data-role="downloads">—</strong> downloads</span><span class="meta-right">hexdocs ↗</span></div>`;
-    grid.appendChild(a);
+      `<span class="process-meta">` +
+      `<span class="process-reg">${esc(registry)}</span>` +
+      `<span class="dl">↓ <strong data-role="downloads">—</strong></span>` +
+      `<span class="process-dest">${esc(dest)} ↗</span>` +
+      `</span>`;
+    table.appendChild(a);
 
-    fetch(`https://hex.pm/api/packages/${encodeURIComponent(pkg.name)}`)
-      .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then((data) => {
-        const ver = data.latest_stable_version || data.latest_version || (data.releases && data.releases[0] && data.releases[0].version);
-        if (ver) a.querySelector('[data-role="version"]').textContent = `v${ver}`;
-        const dl = (data.downloads && (data.downloads.all ?? data.downloads.total)) || 0;
-        terminalCtx.packageMeta.set(pkg.name, { version: ver || null, downloads: dl });
-        countUp(a.querySelector('[data-role="downloads"]'), dl);
+    fetchPackageStats(pkg)
+      .then((stats) => {
+        if (stats.version) a.querySelector('[data-role="version"]').textContent = `v${stats.version}`;
+        terminalCtx.packageMeta.set(packageMetaKey(pkg), { version: stats.version || null, downloads: stats.downloads });
+        countUp(a.querySelector('[data-role="downloads"]'), stats.downloads);
       })
       .catch(() => {
         a.querySelector('[data-role="downloads"]').textContent = "n/a";
@@ -1431,40 +1586,45 @@ function relativeDate(iso) {
   return `${Math.round(days / 365)}y ago`;
 }
 
-async function resolveRepo(entry) {
-  if (entry.source === "manual") {
-    return {
-      name: entry.name,
-      description: entry.description || "",
-      stargazers_count: entry.stars ?? 0,
-      language: entry.language || "—",
-      pushed_at: entry.pushed_at || new Date().toISOString(),
-      html_url: entry.url,
-    };
+function repoCardFromEntry(entry, data) {
+  const fallbackName = entry.override?.name || entry.name || entry.repo?.split("/").pop() || entry.id;
+  return {
+    name: (data && (entry.override?.name || data.name)) || fallbackName,
+    description: entry.override?.description ?? data?.description ?? entry.description ?? "",
+    stargazers_count: data?.stargazers_count ?? entry.stars ?? 0,
+    language: data?.language || entry.language || "—",
+    pushed_at: data?.pushed_at || entry.pushed_at || null,
+    html_url: data?.html_url || entry.url || (entry.repo ? `https://github.com/${entry.repo}` : "#"),
+  };
+}
+
+async function fetchGithubRepoIndex(githubUser) {
+  try {
+    const response = await fetch(`https://api.github.com/users/${encodeURIComponent(githubUser)}/repos?per_page=100&sort=updated`);
+    if (!response.ok) throw new Error(response.status);
+    const list = await response.json();
+    const map = new Map();
+    if (Array.isArray(list)) {
+      for (const repo of list) map.set(String(repo.full_name || "").toLowerCase(), repo);
+    }
+    return map;
+  } catch {
+    return new Map();
   }
+}
+
+async function resolveRepo(entry, githubMap) {
+  if (entry.source === "manual") return repoCardFromEntry(entry, null);
+
+  const cached = githubMap.get(String(entry.repo || "").toLowerCase());
+  if (cached) return repoCardFromEntry(entry, cached);
 
   try {
-    const r = await fetch(`https://api.github.com/repos/${entry.repo}`);
-    if (!r.ok) throw new Error(r.status);
-    const data = await r.json();
-    return {
-      name: entry.override?.name || data.name,
-      description: entry.override?.description ?? data.description ?? "",
-      stargazers_count: data.stargazers_count,
-      language: data.language,
-      pushed_at: data.pushed_at,
-      html_url: data.html_url,
-    };
+    const response = await fetch(`https://api.github.com/repos/${entry.repo}`);
+    if (!response.ok) throw new Error(response.status);
+    return repoCardFromEntry(entry, await response.json());
   } catch {
-    const fallbackName = entry.override?.name || entry.name || entry.repo?.split("/").pop() || entry.id;
-    return {
-      name: fallbackName,
-      description: entry.override?.description ?? entry.description ?? "",
-      stargazers_count: entry.stars ?? 0,
-      language: entry.language || "—",
-      pushed_at: entry.pushed_at || new Date().toISOString(),
-      html_url: entry.url || `https://github.com/${entry.repo}`,
-    };
+    return repoCardFromEntry(entry, null);
   }
 }
 
@@ -1489,7 +1649,7 @@ function renderRepos(repos) {
       `<p class="card-desc">${esc(repo.description || "")}</p>` +
       `<div class="card-meta">` +
       `<span><span class="lang-dot" style="background:${color}"></span> ${esc(lang)}</span>` +
-      `<span class="meta-right">pushed ${relativeDate(repo.pushed_at)}</span>` +
+      `<span class="meta-right">${repo.pushed_at ? `pushed ${relativeDate(repo.pushed_at)}` : "github ↗"}</span>` +
       `</div>`;
     grid.appendChild(a);
     paletteAdd({ kind: "repo", label: repo.name, desc: repo.description || "", url: repo.html_url });
@@ -1499,7 +1659,8 @@ function renderRepos(repos) {
 
 async function loadRepos(entries) {
   const sorted = sortContentItems(entries);
-  const repos = await Promise.all(sorted.map(resolveRepo));
+  const githubMap = await fetchGithubRepoIndex(terminalCtx.profile.githubUser);
+  const repos = await Promise.all(sorted.map((entry) => resolveRepo(entry, githubMap)));
   terminalCtx.repos = repos;
   renderRepos(repos);
   return repos;
@@ -1554,7 +1715,7 @@ function renderWriting(items) {
   function renderList() {
     const q = input.value.trim();
     filtered = paletteItems
-      .map((item) => ({ item, score: Math.max(fuzzyScore(q, item.label), fuzzyScore(q, item.desc) * 0.5) }))
+      .map((item) => ({ item, score: Math.max(fuzzyScore(q, item.label), fuzzyScore(q, item.desc) * 0.5, fuzzyScore(q, item.kind) * 0.8) }))
       .filter((x) => x.score > 0)
       .sort((a, b) => b.score - a.score)
       .map((x) => x.item);
@@ -1584,11 +1745,11 @@ function renderWriting(items) {
     overlay.classList.add("open");
     input.value = ""; active = 0;
     renderList();
-    input.focus();
+    input.focus({ preventScroll: true });
   }
   function close() {
     overlay.classList.remove("open");
-    if (lastFocus && lastFocus.focus) lastFocus.focus();
+    if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
   }
 
   document.addEventListener("keydown", (e) => {
@@ -1631,7 +1792,7 @@ async function boot(site) {
   terminalCtx.profile = profile;
   terminalCtx.terminalProfile = profile.terminal || {
     role: "Senior Full-Stack Engineer",
-    stack: ["Elixir", "JavaScript", "Python"],
+    stack: ["Elixir", "TypeScript", "Python", "AWS"],
     location: "Antalya, TR (UTC+3)",
     status: ":available",
   };
